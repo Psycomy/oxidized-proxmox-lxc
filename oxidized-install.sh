@@ -11,7 +11,7 @@
 #     con el estilo de community-scripts/ProxmoxVE. En inglés y español.
 #
 # Usage / Uso (pin a tag, not the main branch / apunta a una etiqueta, no a main):
-#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.1.0/oxidized-install.sh)"
+#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.1.1/oxidized-install.sh)"
 #
 # Unattended install / Instalación desatendida (each variable skips its question):
 #   OXI_LANG=en|es
@@ -72,7 +72,8 @@ HOURGLASS="${TAB}⏳${TAB}"
 SPINNER_PID=""
 
 header_info() {
-  clear
+  # Sin terminal (ssh sin TTY, pct exec, cron) no hay TERM y clear falla
+  if [[ -t 1 ]]; then clear 2>/dev/null || true; fi
   cat <<'EOF'
    ____        _     ___               __
   / __ \_  __ (_)___/ (_)___  ___  ___/ /
@@ -633,7 +634,19 @@ setup_telegram() {
   )
   chown "root:${OXI_USER}" "${OXI_HOME}/telegram.env"
   chmod 0640 "${OXI_HOME}/telegram.env"
+  write_telegram_hook
+  msg_ok "$(L "Hook de Telegram instalado" "Telegram hook installed")"
 
+  msg_info "$(L "Enviando mensaje de prueba a Telegram" "Sending a test message to Telegram")"
+  if /usr/local/bin/oxidized-telegram-notify --test >>"${INSTALL_LOG}" 2>&1; then
+    msg_ok "$(L "Mensaje de prueba enviado a Telegram" "Test message sent to Telegram")"
+  else
+    msg_warn "$(L "No se pudo enviar el mensaje de prueba: revisa token/chat ID en ${OXI_HOME}/telegram.env" "Could not send the test message: check the token/chat ID in ${OXI_HOME}/telegram.env")"
+  fi
+}
+
+# Script del hook de Telegram (también se regenera al actualizar)
+write_telegram_hook() {
   {
     echo '#!/usr/bin/env bash'
     echo "# Oxidized hook (post_store event): Telegram notification on configuration changes."
@@ -678,14 +691,6 @@ Commit: ${OX_REPO_COMMITREF:0:10}"
 EOF
   } >/usr/local/bin/oxidized-telegram-notify
   chmod 0755 /usr/local/bin/oxidized-telegram-notify
-  msg_ok "$(L "Hook de Telegram instalado" "Telegram hook installed")"
-
-  msg_info "$(L "Enviando mensaje de prueba a Telegram" "Sending a test message to Telegram")"
-  if /usr/local/bin/oxidized-telegram-notify --test >>"${INSTALL_LOG}" 2>&1; then
-    msg_ok "$(L "Mensaje de prueba enviado a Telegram" "Test message sent to Telegram")"
-  else
-    msg_warn "$(L "No se pudo enviar el mensaje de prueba: revisa token/chat ID en ${OXI_HOME}/telegram.env" "Could not send the test message: check the token/chat ID in ${OXI_HOME}/telegram.env")"
-  fi
 }
 
 install_helpers() {
@@ -774,6 +779,13 @@ if [[ ${errors} -gt 0 ]]; then
   exit 1
 fi
 if [[ ${nodes} -eq 0 ]]; then
+  # Oxidized no admite un inventario vacío: si estaba en marcha se detiene, para que
+  # no siga copiando equipos que ya se han quitado
+  if systemctl is-active --quiet oxidized; then
+    systemctl stop oxidized
+    L "router.db ya no tiene equipos: Oxidized detenido. Se arrancará al añadir uno y ejecutar oxidized-reload." "router.db has no devices left: Oxidized stopped. It will start again once you add one and run oxidized-reload."
+    exit 0
+  fi
   L "router.db no tiene equipos: Oxidized no arranca hasta que añadas al menos uno." "router.db has no devices: Oxidized will not start until you add at least one." >&2
   exit 1
 fi
@@ -887,6 +899,18 @@ setup_nginx() {
     chmod 0600 "${ssl_dir}/oxidized.key"
   fi
 
+  write_nginx_site
+  rm -f /etc/nginx/sites-enabled/default
+  ln -sf /etc/nginx/sites-available/oxidized /etc/nginx/sites-enabled/oxidized
+  $STD nginx -t
+  $STD systemctl enable nginx
+  $STD systemctl reload-or-restart nginx
+  msg_ok "$(L "nginx configurado con HTTPS (443) y redirección desde el 80" "nginx configured with HTTPS (443) and redirect from port 80")"
+}
+
+# Sitio nginx (también se regenera al actualizar; no toca contraseña ni certificado)
+write_nginx_site() {
+  local ssl_dir=/etc/nginx/ssl
   cat >/etc/nginx/sites-available/oxidized <<EOF
 # All HTTP traffic is redirected to HTTPS
 server {
@@ -916,6 +940,15 @@ server {
     auth_basic "Oxidized";
     auth_basic_user_file /etc/nginx/oxidized.htpasswd;
 
+    # oxidized-web 0.18 ignores hide_node_vars in the JSON node list (/nodes.json,
+    # /nodes?format=json, /nodes/<filter>/...json) and would expose the enable
+    # password. The web UI does not use those endpoints, so they are blocked.
+    set \$nodes_json "";
+    if (\$uri ~ "^/nodes(\.json)?\$|^/nodes/(?!stats|conf_search)") { set \$nodes_json "a"; }
+    if (\$uri ~ "\.json\$") { set \$nodes_json "\${nodes_json}b"; }
+    if (\$arg_format = "json") { set \$nodes_json "\${nodes_json}b"; }
+    if (\$nodes_json ~ "^ab") { return 403; }
+
     location / {
         proxy_pass http://127.0.0.1:${OXI_PORT};
         proxy_set_header Host \$host;
@@ -926,12 +959,6 @@ server {
     }
 }
 EOF
-  rm -f /etc/nginx/sites-enabled/default
-  ln -sf /etc/nginx/sites-available/oxidized /etc/nginx/sites-enabled/oxidized
-  $STD nginx -t
-  $STD systemctl enable nginx
-  $STD systemctl reload-or-restart nginx
-  msg_ok "$(L "nginx configurado con HTTPS (443) y redirección desde el 80" "nginx configured with HTTPS (443) and redirect from port 80")"
 }
 
 verify_install() {
@@ -1004,8 +1031,12 @@ print_summary() {
 # Mantenimiento: actualizar, copia de seguridad, desinstalar
 # ---------------------------------------------------------------------------
 do_backup() {
-  local file
-  file="/root/oxidized-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+  local file n=1 stamp
+  stamp=$(date +%Y%m%d-%H%M%S)
+  file="/root/oxidized-backup-${stamp}.tar.gz"
+  while [[ -e "${file}" ]]; do
+    file="/root/oxidized-backup-${stamp}-$((n++)).tar.gz"
+  done
   msg_info "$(L "Creando copia de seguridad" "Creating backup")"
   local paths=()
   for p in "${OXI_HOME}" "${OXI_DATA}" /etc/systemd/system/oxidized.service \
@@ -1032,6 +1063,24 @@ do_update() {
   $STD gem cleanup oxidized oxidized-web
   after=$(oxidized_version)
   msg_ok "Oxidized ${before} → ${after}"
+
+  # Regenera lo que genera este script para aplicar sus mejoras; no toca config,
+  # router.db, contraseñas ni certificados
+  msg_info "$(L "Actualizando los ficheros del instalador" "Updating installer-managed files")"
+  [[ -f /usr/local/bin/oxidized-reload ]] && install_helpers
+  [[ -f /usr/local/bin/oxidized-telegram-notify ]] && write_telegram_hook
+  if [[ -f /etc/nginx/sites-available/oxidized ]]; then
+    cp -p /etc/nginx/sites-available/oxidized /etc/nginx/sites-available/oxidized.bak
+    write_nginx_site
+    if $STD nginx -t; then
+      rm -f /etc/nginx/sites-available/oxidized.bak
+      $STD systemctl reload nginx
+    else
+      mv /etc/nginx/sites-available/oxidized.bak /etc/nginx/sites-available/oxidized
+      msg_warn "$(L "La nueva configuración de nginx no es válida; se mantiene la anterior" "The new nginx configuration is not valid; keeping the previous one")"
+    fi
+  fi
+  msg_ok "$(L "Ficheros del instalador actualizados" "Installer-managed files updated")"
   msg_info "$(L "Reiniciando el servicio" "Restarting the service")"
   systemctl restart oxidized
   sleep 5

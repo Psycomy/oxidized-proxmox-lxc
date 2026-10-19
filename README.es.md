@@ -62,16 +62,16 @@ Un único script, con el estilo de [community-scripts/ProxmoxVE](https://github.
 Dentro del LXC, como `root`:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.1.0/oxidized-install.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.1.1/oxidized-install.sh)"
 ```
 
 > [!TIP]
-> El comando apunta a la etiqueta **`v1.1.0`**, no a `main`. Así sabes exactamente qué código ejecutas como root, aunque el repositorio cambie después.
+> El comando apunta a la etiqueta **`v1.1.1`**, no a `main`. Así sabes exactamente qué código ejecutas como root, aunque el repositorio cambie después.
 
 Si prefieres revisarlo antes de ejecutarlo:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.1.0/oxidized-install.sh
+curl -fsSLO https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.1.1/oxidized-install.sh
 less oxidized-install.sh
 bash oxidized-install.sh
 ```
@@ -130,6 +130,8 @@ Lo primero que pregunta es el **idioma** (*English* / *Español*); se recuerda p
 <details>
 <summary><b>Ejemplo de instalación desatendida</b></summary>
 
+También funciona sin terminal, por ejemplo desde el host Proxmox con `pct exec <id> -- env OXI_LANG=es ... bash /root/oxidized-install.sh`.
+
 ```bash
 export OXI_LANG=es OXI_WEB_MODE=nginx OXI_WEB_USER=admin OXI_WEB_PASS='CambiaEsto!'
 export OXI_GIT_MODE=local OXI_TELEGRAM=no OXI_INTERVAL=3600
@@ -144,7 +146,7 @@ bash oxidized-install.sh
 |---|---|---|
 | **`nginx`** ⭐ | `https://IP` con usuario y contraseña | El recomendado. TLS con certificado autofirmado, el puerto 80 redirige a HTTPS. |
 | **`none`** | Ninguno desde fuera | Solo quieres las copias. La API queda en `127.0.0.1` para `oxidized-reload`. |
-| **`direct`** ⚠️ | `http://IP:8888` **sin autenticación** | Solo en redes totalmente aisladas. El script pide confirmación antes de usarlo. |
+| **`direct`** ⚠️ | `http://IP:8888` **sin autenticación** | Solo en redes totalmente aisladas. El script pide confirmación antes de usarlo. En este modo `/nodes.json` también expone las contraseñas de enable. |
 
 <details>
 <summary><b>Usar tu propio certificado TLS</b></summary>
@@ -212,7 +214,7 @@ oxidized-reload
 
 | Comando | Qué hace |
 |---|---|
-| `oxidized-reload` | Valida `router.db`, **registra la huella SSH** de los equipos nuevos y recarga el inventario sin reiniciar. Si Oxidized estaba parado, lo arranca. |
+| `oxidized-reload` | Valida `router.db`, **registra la huella SSH** de los equipos nuevos y recarga el inventario sin reiniciar. Si Oxidized estaba parado, lo arranca; si ya no quedan equipos, lo detiene. |
 | `oxidized-reload --trust IP [PUERTO]` | Vuelve a registrar la huella SSH de un equipo, por ejemplo tras sustituirlo. |
 | `oxidized-reload --forget IP [PUERTO]` | Borra la huella registrada de un equipo. |
 
@@ -241,6 +243,7 @@ El script se ha revisado para proteger, ante todo, **las credenciales de tus equ
 | 🔐 **HTTPS** | nginx con TLS 1.2/1.3, redirección desde HTTP y cabeceras de seguridad. |
 | 🔑 **Contraseña de la web en SHA-512** | Generada sin pasar la contraseña por la línea de comandos. |
 | 🙈 **`enable` oculto en la web** | `hide_node_vars: [enable]`, para que no se vea en la ficha del equipo ni en la API. |
+| 🚫 **Listado JSON bloqueado** | oxidized-web 0.18 ignora `hide_node_vars` en `/nodes.json`; nginx bloquea esos endpoints (la web no los usa). |
 | 📵 **Telegram sin secretos** | Solo envía un resumen; el token del bot no aparece en la lista de procesos. |
 | 👤 **Usuario sin privilegios** | Oxidized se ejecuta como `oxidized`, sin shell y con `NoNewPrivileges`. |
 | 📁 **Permisos ajustados** | `router.db` 600, `telegram.env` 640, copias de seguridad y log de instalación 600. |
@@ -254,7 +257,7 @@ Vuelve a ejecutar el script en el mismo LXC y aparecerá este menú:
 
 | Opción | Qué hace |
 |---|---|
-| **Actualizar** | Hace una copia de seguridad y después actualiza el sistema y las gemas de Oxidized, conservando tu configuración. |
+| **Actualizar** | Hace una copia de seguridad, actualiza el sistema y las gemas de Oxidized y regenera los ficheros que gestiona el instalador (sitio nginx, `oxidized-reload`, aviso de Telegram), conservando tu configuración, inventario, contraseñas y certificados. |
 | **Copia de seguridad** | Guarda la configuración, el inventario, el repositorio git, nginx y TLS en `/root/oxidized-backup-FECHA.tar.gz`. |
 | **Desinstalar** | Lo elimina todo, ofreciendo antes una copia de seguridad y la opción de conservar el repositorio git. |
 
