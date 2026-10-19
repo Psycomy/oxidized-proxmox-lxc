@@ -33,7 +33,7 @@
 
 Un único script, con el estilo de [community-scripts/ProxmoxVE](https://github.com/community-scripts/ProxmoxVE), que se ejecuta **dentro de un LXC que ya has creado** y deja [Oxidized](https://github.com/ytti/oxidized) funcionando como servicio. Durante la instalación te pregunta todo con menús.
 
-| | |
+| Característica | Detalle |
 |---|---|
 | 🧩 **Autocontenido** | No depende de `build.func` ni de ningún fork: un solo fichero. |
 | 🎛️ **Interactivo o desatendido** | Menús *whiptail*, o variables de entorno para automatizarlo. |
