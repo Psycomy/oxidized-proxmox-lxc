@@ -57,6 +57,12 @@ Un único script, con el estilo de [community-scripts/ProxmoxVE](https://github.
 > [!NOTE]
 > Probado en Debian 13 con Oxidized 0.37.0 y oxidized-web 0.18.1. En Ubuntu 24.04 y 26.04 el script está preparado (incluido el repositorio *universe*), pero **todavía no se ha probado**.
 
+> [!CAUTION]
+> **Máquinas virtuales y servidores físicos:** en teoría el script también funciona en una VM o en una máquina física con Debian 13 o Ubuntu 24.04/26.04, porque solo depende de `apt`, `systemd`, Ruby y nginx. **Solo se ha probado en un LXC.** Fuera de un contenedor muestra un aviso y continúa. Ten en cuenta que:
+> - **Da por hecho que la máquina es solo para Oxidized:** hace un `apt upgrade` completo, borra el sitio `default` de nginx y ocupa los puertos 80/443 como `default_server`. En una VM que ya sirva otras webs con nginx, las desplazaría.
+> - **Primer arranque de imágenes cloud de Ubuntu:** con cloud-init, `unattended-upgrades` puede tener bloqueado `apt` unos minutos y la instalación fallaría. Espera a que termine o vuelve a lanzar el script.
+> - **Cortafuegos:** si la VM tiene `ufw` u otro cortafuegos activo, abre el puerto 443 (y el 80 para la redirección), o el 8888 en modo `direct`. El script no toca el cortafuegos.
+
 ## 🚀 Instalación rápida
 
 Dentro del LXC, como `root`:
