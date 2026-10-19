@@ -1,5 +1,7 @@
 <div align="center">
 
+**🇬🇧 English** · [🇪🇸 Español](README.es.md)
+
 ```
    ____        _     ___               __
   / __ \_  __ (_)___/ (_)___  ___  ___/ /
@@ -8,197 +10,199 @@
 \____/_/|_|/_/\__,_/_/ /___/\___/\__,_/
 ```
 
-# Oxidized para Proxmox LXC
+# Oxidized for Proxmox LXC
 
-**Copias de seguridad automáticas de la configuración de tus routers, switches y firewalls,<br>instaladas en un LXC con un solo comando.**
+**Automatic configuration backups for your routers, switches and firewalls,<br>installed in an LXC with a single command.**
 
-[![License: MIT](https://img.shields.io/badge/licencia-MIT-green.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 ![Proxmox](https://img.shields.io/badge/Proxmox-LXC-E57000?logo=proxmox&logoColor=white)
 ![Debian 13](https://img.shields.io/badge/Debian-13-A81D33?logo=debian&logoColor=white)
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04%20%7C%2026.04-E95420?logo=ubuntu&logoColor=white)
 ![Bash](https://img.shields.io/badge/bash-script-4EAA25?logo=gnubash&logoColor=white)
 [![Oxidized](https://img.shields.io/badge/Oxidized-ytti%2Foxidized-B7410E)](https://github.com/ytti/oxidized)
 
-[Instalación](#-instalación-rápida) ·
-[Opciones](#%EF%B8%8F-opciones-de-instalación) ·
-[Inventario](#-añadir-equipos) ·
-[Seguridad](#-seguridad) ·
-[Mantenimiento](#-mantenimiento)
+[Install](#-quick-install) ·
+[Options](#%EF%B8%8F-installation-options) ·
+[Inventory](#-adding-devices) ·
+[Security](#-security) ·
+[Maintenance](#-maintenance)
 
 </div>
 
 ---
 
-## ✨ Qué hace
+## ✨ What it does
 
-Un único script, con el estilo de [community-scripts/ProxmoxVE](https://github.com/community-scripts/ProxmoxVE), que se ejecuta **dentro de un LXC que ya has creado** y deja [Oxidized](https://github.com/ytti/oxidized) funcionando como servicio. Durante la instalación te pregunta todo con menús.
+A single script, in the style of [community-scripts/ProxmoxVE](https://github.com/community-scripts/ProxmoxVE), that runs **inside an LXC you have already created** and leaves [Oxidized](https://github.com/ytti/oxidized) running as a service. It asks everything through menus during the installation.
 
-| Característica | Detalle |
+| Feature | Details |
 |---|---|
-| 🧩 **Autocontenido** | No depende de `build.func` ni de ningún fork: un solo fichero. |
-| 🎛️ **Interactivo o desatendido** | Menús *whiptail*, o variables de entorno para automatizarlo. |
-| 🔐 **Seguro por defecto** | Solo SSH, huellas verificadas, HTTPS, secretos fuera de la web y de Telegram. |
-| 🌐 **Interfaz web a elegir** | HTTPS con usuario y contraseña (nginx), sin web, o HTTP directo. |
-| 🗂️ **Historial en git** | Cada cambio de configuración es un commit, con push opcional a Gitea o GitHub. |
-| 📣 **Avisos por Telegram** | Un mensaje cada vez que cambia la configuración de un equipo. |
-| 🔁 **Mantenimiento integrado** | Vuelve a ejecutar el script para actualizar, hacer una copia de seguridad o desinstalar. |
+| 🧩 **Self-contained** | No dependency on `build.func` or any fork: a single file. |
+| 🌍 **English or Spanish** | Pick the language at start: messages, menus, generated files and notifications. |
+| 🎛️ **Interactive or unattended** | *whiptail* menus, or environment variables to automate it. |
+| 🔐 **Secure by default** | SSH only, verified fingerprints, HTTPS, secrets kept out of the web UI and Telegram. |
+| 🌐 **Choice of web interface** | HTTPS with username and password (nginx), no web, or plain HTTP. |
+| 🗂️ **Git history** | Every configuration change is a commit, with optional push to Gitea or GitHub. |
+| 📣 **Telegram notifications** | A message every time a device configuration changes. |
+| 🔁 **Built-in maintenance** | Run the script again to update, back up or uninstall. |
 
-## 📋 Requisitos
+## 📋 Requirements
 
-- Un **LXC** en Proxmox (privilegiado o no, ambos sirven) con:
-  - 🟩 **Debian 13** (probado) · 🟨 **Ubuntu 24.04** (pendiente de probar) · 🟨 **Ubuntu 26.04** (pendiente de probar)
-  - Acceso a Internet (paquetes y [rubygems.org](https://rubygems.org))
-  - Recomendado: **1 vCPU, 1 GB de RAM y 4 GB de disco** (la instalación compila extensiones de Ruby)
-- Que los equipos de red sean accesibles por **SSH** desde el LXC.
+- A Proxmox **LXC** (privileged or unprivileged, both work) with:
+  - 🟩 **Debian 13** (tested) · 🟨 **Ubuntu 24.04** (not tested yet) · 🟨 **Ubuntu 26.04** (not tested yet)
+  - Internet access (packages and [rubygems.org](https://rubygems.org))
+  - Recommended: **1 vCPU, 1 GB RAM and 4 GB disk** (the installation compiles Ruby extensions)
+- Network devices reachable over **SSH** from the LXC.
 
 > [!NOTE]
-> Probado en Debian 13 con Oxidized 0.37.0 y oxidized-web 0.18.1. En Ubuntu 24.04 y 26.04 el script está preparado (incluido el repositorio *universe*), pero **todavía no se ha probado**.
+> Tested on Debian 13 with Oxidized 0.37.0 and oxidized-web 0.18.1. On Ubuntu 24.04 and 26.04 the script is ready (including the *universe* repository) but **has not been tested yet**.
 
-## 🚀 Instalación rápida
+## 🚀 Quick install
 
-Dentro del LXC, como `root`:
+Inside the LXC, as `root`:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.0.1/oxidized-install.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.1.0/oxidized-install.sh)"
 ```
 
 > [!TIP]
-> El comando apunta a la etiqueta **`v1.0.1`**, no a `main`. Así sabes exactamente qué código ejecutas como root, aunque el repositorio cambie después.
+> The command points to the **`v1.1.0`** tag, not `main`. That way you know exactly which code you run as root, even if the repository changes later.
 
-Si prefieres revisarlo antes de ejecutarlo:
+If you prefer to review it before running it:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.0.1/oxidized-install.sh
+curl -fsSLO https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.1.0/oxidized-install.sh
 less oxidized-install.sh
 bash oxidized-install.sh
 ```
 
-### Qué ocurre durante la instalación
+### What happens during the installation
 
 ```mermaid
 flowchart LR
-    A[Comprobaciones<br/>SO · LXC · red] --> B[Menús<br/>web · git · Telegram]
-    B --> C[Paquetes<br/>y Ruby]
-    C --> D[Gemas<br/>oxidized + web]
-    D --> E[Usuario, config<br/>y router.db]
-    E --> F[Servicio systemd<br/>+ nginx HTTPS]
-    F --> G[Verificación<br/>y resumen]
+    A[Language and<br/>checks] --> B[Menus<br/>web · git · Telegram]
+    B --> C[Packages<br/>and Ruby]
+    C --> D[Gems<br/>oxidized + web]
+    D --> E[User, config<br/>and router.db]
+    E --> F[systemd service<br/>+ nginx HTTPS]
+    F --> G[Checks<br/>and summary]
 ```
 
-Al terminar verás algo así:
+When it finishes you will see something like:
 
 ```
-  ✔️  Sistema actualizado
-  ✔️  Dependencias instaladas
+  ✔️  System updated
+  ✔️  Dependencies installed
   ✔️  Ruby 3.3.8
-  ✔️  Instalado Oxidized 0.37.0 (/usr/local/bin/oxidized)
-  ✔️  Usuario oxidized y directorios creados
-  ✔️  Configuración escrita en /etc/oxidized
-  ✔️  Instalado oxidized-reload
-  ✔️  Servicio oxidized creado (arrancará al añadir equipos)
-  ✔️  nginx configurado con HTTPS (443) y redirección desde el 80
-  ✔️  Configuración válida; Oxidized arrancará al añadir equipos
+  ✔️  Installed Oxidized 0.37.0 (/usr/local/bin/oxidized)
+  ✔️  User oxidized and directories created
+  ✔️  Configuration written to /etc/oxidized
+  ✔️  Installed oxidized-reload
+  ✔️  oxidized service created (it will start once devices are added)
+  ✔️  nginx configured with HTTPS (443) and redirect from port 80
+  ✔️  Configuration is valid; Oxidized will start once devices are added
 
-  ✔️  Oxidized 0.37.0 instalado correctamente
-  💡  Web:            https://192.168.1.50  (usuario: admin, certificado autofirmado)
-  💡  Inventario:     /etc/oxidized/router.db
+  ✔️  Oxidized 0.37.0 installed successfully
+  💡  Web:                 https://192.168.1.50  (user: admin, self-signed certificate)
+  💡  Inventory:           /etc/oxidized/router.db
 ```
 
-## ⚙️ Opciones de instalación
+## ⚙️ Installation options
 
-El script pregunta lo siguiente. Si defines la variable de entorno correspondiente, se salta esa pregunta, lo que permite una **instalación desatendida**.
+The first question is the **language** (*English* / *Español*); it is remembered for later runs. Then the script asks the following. If you set the matching environment variable, that question is skipped, which allows an **unattended installation**.
 
-| Pregunta | Variable | Valores | Por defecto |
+| Question | Variable | Values | Default |
 |---|---|---|---|
-| Interfaz web | `OXI_WEB_MODE` | `nginx` · `none` · `direct` | — |
-| Usuario de la web | `OXI_WEB_USER` | texto | `admin` |
-| Contraseña de la web | `OXI_WEB_PASS` | texto | — |
-| Almacenamiento | `OXI_GIT_MODE` | `local` · `remote` | — |
-| Repositorio remoto | `OXI_GIT_REMOTE` | URL SSH | — |
-| Avisos por Telegram | `OXI_TELEGRAM` | `yes` · `no` | — |
-| Token del bot | `OXI_TG_TOKEN` | texto | — |
-| Chat ID | `OXI_TG_CHAT` | texto | — |
-| Intervalo entre copias | `OXI_INTERVAL` | segundos | `3600` |
-| Versión de Oxidized | `OXI_VERSION` | p. ej. `0.37.0` | la última |
-| Versión de oxidized-web | `OXI_WEB_VERSION` | p. ej. `0.18.1` | la última |
-| Salida detallada | `VERBOSE` | `yes` | oculta |
+| Language | `OXI_LANG` | `en` · `es` | system language |
+| Web interface | `OXI_WEB_MODE` | `nginx` · `none` · `direct` | — |
+| Web username | `OXI_WEB_USER` | text | `admin` |
+| Web password | `OXI_WEB_PASS` | text | — |
+| Storage | `OXI_GIT_MODE` | `local` · `remote` | — |
+| Remote repository | `OXI_GIT_REMOTE` | SSH URL | — |
+| Telegram notifications | `OXI_TELEGRAM` | `yes` · `no` | — |
+| Bot token | `OXI_TG_TOKEN` | text | — |
+| Chat ID | `OXI_TG_CHAT` | text | — |
+| Interval between backups | `OXI_INTERVAL` | seconds | `3600` |
+| Oxidized version | `OXI_VERSION` | e.g. `0.37.0` | latest |
+| oxidized-web version | `OXI_WEB_VERSION` | e.g. `0.18.1` | latest |
+| Verbose output | `VERBOSE` | `yes` | hidden |
 
 <details>
-<summary><b>Ejemplo de instalación desatendida</b></summary>
+<summary><b>Unattended installation example</b></summary>
 
 ```bash
-export OXI_WEB_MODE=nginx OXI_WEB_USER=admin OXI_WEB_PASS='CambiaEsto!'
+export OXI_LANG=en OXI_WEB_MODE=nginx OXI_WEB_USER=admin OXI_WEB_PASS='ChangeMe!'
 export OXI_GIT_MODE=local OXI_TELEGRAM=no OXI_INTERVAL=3600
 bash oxidized-install.sh
 ```
 
 </details>
 
-### 🌐 Modos de la interfaz web
+### 🌐 Web interface modes
 
-| Modo | Acceso | Cuándo usarlo |
+| Mode | Access | When to use it |
 |---|---|---|
-| **`nginx`** ⭐ | `https://IP` con usuario y contraseña | El recomendado. TLS con certificado autofirmado, el puerto 80 redirige a HTTPS. |
-| **`none`** | Ninguno desde fuera | Solo quieres las copias. La API queda en `127.0.0.1` para `oxidized-reload`. |
-| **`direct`** ⚠️ | `http://IP:8888` **sin autenticación** | Solo en redes totalmente aisladas. El script pide confirmación antes de usarlo. |
+| **`nginx`** ⭐ | `https://IP` with username and password | Recommended. TLS with a self-signed certificate; port 80 redirects to HTTPS. |
+| **`none`** | None from outside | You only want the backups. The API stays on `127.0.0.1` for `oxidized-reload`. |
+| **`direct`** ⚠️ | `http://IP:8888` **without authentication** | Only on fully isolated networks. The script asks for confirmation first. |
 
 <details>
-<summary><b>Usar tu propio certificado TLS</b></summary>
+<summary><b>Using your own TLS certificate</b></summary>
 
-Sustituye estos dos ficheros y recarga nginx:
+Replace these two files and reload nginx:
 
 ```bash
-/etc/nginx/ssl/oxidized.crt   # certificado (con la cadena)
-/etc/nginx/ssl/oxidized.key   # clave privada (permisos 600)
+/etc/nginx/ssl/oxidized.crt   # certificate (with chain)
+/etc/nginx/ssl/oxidized.key   # private key (mode 600)
 systemctl reload nginx
 ```
 
 </details>
 
-### 🗂️ Almacenamiento
+### 🗂️ Storage
 
-- **`local`**: repositorio git en `/var/lib/oxidized/configs.git`, con el historial completo visible en la web.
-- **`remote`**: lo mismo, más un **push automático** a un repositorio remoto tras cada cambio. El script genera una clave SSH y te la muestra para que la añadas como **Deploy Key con permiso de escritura**. La URL tiene que ser SSH, por ejemplo `git@gitea.local:red/oxidized-configs.git`.
+- **`local`**: git repository in `/var/lib/oxidized/configs.git`, with the full history visible in the web UI.
+- **`remote`**: the same, plus an **automatic push** to a remote repository after each change. The script generates an SSH key and shows it so you can add it as a **Deploy Key with write access**. The URL must be SSH, for example `git@gitea.local:net/oxidized-configs.git`.
 
 ### 📣 Telegram
 
-Crea un bot con [@BotFather](https://t.me/BotFather), consigue el chat ID y el script envía un mensaje de prueba al terminar. Cada vez que cambie la configuración de un equipo recibirás:
+Create a bot with [@BotFather](https://t.me/BotFather), get the chat ID, and the script sends a test message when it finishes. Every time a device configuration changes you will receive:
 
 ```
-🔄 Cambio de configuración detectado
-Equipo: core-sw01
+🔄 Configuration change detected
+Device: core-sw01
 IP: 192.0.2.10
-Modelo: IOS
-Líneas: +3 / -2
+Model: IOS
+Lines: +3 / -2
 Commit: 22fbfae3f1
 ```
 
 > [!IMPORTANT]
-> El aviso **no incluye el diff**: las configuraciones contienen secretos (hashes, comunidades SNMP, claves de VPN…) que no deben acabar en Telegram. El detalle está en la web.
+> The notification **does not include the diff**: configurations contain secrets (hashes, SNMP communities, VPN keys…) that must not end up in Telegram. The details are in the web UI.
 
-## 📝 Añadir equipos
+## 📝 Adding devices
 
-El inventario es `/etc/oxidized/router.db`: **un equipo por línea**, campos separados por `;`, con **credenciales propias para cada equipo**.
+The inventory is `/etc/oxidized/router.db`: **one device per line**, fields separated by `;`, with **separate credentials for each device**.
 
 ```text
-# nombre;ip;modelo;usuario;contraseña;enable
+# name;ip;model;username;password;enable
 core-sw01;192.0.2.10;ios;backup;S3cr3t;EnableS3cr3t
-edge-rtr01;2001:db8::1;junos;backup;Otra:Clave;
-mk-oficina;198.51.100.5;routeros;admin;MiClave;
+edge-rtr01;2001:db8::1;junos;backup;Another:Pass;
+mk-office;198.51.100.5;routeros;admin;MyPass;
 ```
 
-| Campo | Descripción |
+| Field | Description |
 |---|---|
-| `nombre` | Identificador único; es el que aparece en la web y en git. |
-| `ip` | IPv4, IPv6 o nombre DNS. |
-| `modelo` | `ios`, `nxos`, `junos`, `routeros`, `fortios`, `procurve`, `comware`, `eos`… ([lista completa](https://github.com/ytti/oxidized/blob/master/docs/Supported-OS-Types.md)) |
-| `usuario` / `contraseña` | Acceso SSH a ese equipo. |
-| `enable` | Contraseña de modo privilegiado; vacío si no hace falta (la línea termina en `;`). |
+| `name` | Unique identifier; shown in the web UI and in git. |
+| `ip` | IPv4, IPv6 or DNS name. |
+| `model` | `ios`, `nxos`, `junos`, `routeros`, `fortios`, `procurve`, `comware`, `eos`… ([full list](https://github.com/ytti/oxidized/blob/master/docs/Supported-OS-Types.md)) |
+| `username` / `password` | SSH access to that device. |
+| `enable` | Privileged-mode password; empty if not needed (the line ends with `;`). |
 
 > [!NOTE]
-> Se usa `;` como separador para admitir IPv6 y contraseñas con `:`. Por eso una contraseña **no puede contener `;`**.
+> `;` is used as separator so IPv6 addresses and passwords containing `:` are allowed. Because of that, a password **cannot contain `;`**.
 
-Después de editar el fichero:
+After editing the file:
 
 ```bash
 oxidized-reload
@@ -206,104 +210,105 @@ oxidized-reload
 
 ### 🔄 `oxidized-reload`
 
-| Comando | Qué hace |
+| Command | What it does |
 |---|---|
-| `oxidized-reload` | Valida `router.db`, **registra la huella SSH** de los equipos nuevos y recarga el inventario sin reiniciar. Si Oxidized estaba parado, lo arranca. |
-| `oxidized-reload --trust IP [PUERTO]` | Vuelve a registrar la huella SSH de un equipo, por ejemplo tras sustituirlo. |
-| `oxidized-reload --forget IP [PUERTO]` | Borra la huella registrada de un equipo. |
+| `oxidized-reload` | Validates `router.db`, **records the SSH fingerprint** of new devices and reloads the inventory without restarting. If Oxidized was stopped, it starts it. |
+| `oxidized-reload --trust IP [PORT]` | Records a device's SSH fingerprint again, for example after replacing it. |
+| `oxidized-reload --forget IP [PORT]` | Removes a device's recorded fingerprint. |
 
 ```
 $ oxidized-reload
-Huella SSH registrada para mk-oficina (198.51.100.5):
+SSH fingerprint recorded for mk-office (198.51.100.5):
     256 SHA256:pF3vwFAJB0zDv3iwz0daAKhyjhCVNCjAKBG1nIoNLJg 198.51.100.5 (ED25519)
-Oxidized estaba parado; arrancándolo con 1 equipo(s)...
-Oxidized en marcha.
+Oxidized was stopped; starting it with 1 device(s)...
+Oxidized is running.
 ```
 
 > [!TIP]
-> Compara la huella que muestra con la del propio equipo, por ejemplo conectándote tú por SSH desde otra máquina de confianza, para asegurarte de que es la buena.
+> Compare the fingerprint shown with the device's own, for example by connecting over SSH yourself from another trusted machine, to make sure it is the right one.
 
 > [!NOTE]
-> Oxidized **no arranca con el inventario vacío**. El servicio queda en espera, sin errores ni reinicios, hasta que añades el primer equipo y ejecutas `oxidized-reload`.
+> Oxidized **does not start with an empty inventory**. The service stays on hold, with no errors or restarts, until you add the first device and run `oxidized-reload`.
 
-## 🔐 Seguridad
+## 🔐 Security
 
-El script se ha revisado para proteger, ante todo, **las credenciales de tus equipos**:
+The script has been reviewed to protect, above all, **your devices' credentials**:
 
-| Medida | Detalle |
+| Measure | Details |
 |---|---|
-| 🔒 **Solo SSH** | Sin recurrir a Telnet, que enviaría las contraseñas en claro si SSH fallase. |
-| 🪪 **Huellas SSH verificadas** | `input.ssh.secure: true`. `oxidized-reload` registra la huella la primera vez y, si un equipo cambia de clave, la copia falla en lugar de entregar la contraseña a un impostor. |
-| 🔐 **HTTPS** | nginx con TLS 1.2/1.3, redirección desde HTTP y cabeceras de seguridad. |
-| 🔑 **Contraseña de la web en SHA-512** | Generada sin pasar la contraseña por la línea de comandos. |
-| 🙈 **`enable` oculto en la web** | `hide_node_vars: [enable]`, para que no se vea en la ficha del equipo ni en la API. |
-| 📵 **Telegram sin secretos** | Solo envía un resumen; el token del bot no aparece en la lista de procesos. |
-| 👤 **Usuario sin privilegios** | Oxidized se ejecuta como `oxidized`, sin shell y con `NoNewPrivileges`. |
-| 📁 **Permisos ajustados** | `router.db` 600, `telegram.env` 640, copias de seguridad y log de instalación 600. |
+| 🔒 **SSH only** | No fallback to Telnet, which would send passwords in clear text if SSH failed. |
+| 🪪 **Verified SSH fingerprints** | `input.ssh.secure: true`. `oxidized-reload` records the fingerprint the first time; if a device's key changes, the backup fails instead of handing the password to an impostor. |
+| 🔐 **HTTPS** | nginx with TLS 1.2/1.3, redirect from HTTP and security headers. |
+| 🔑 **SHA-512 web password** | Generated without passing the password on the command line. |
+| 🙈 **`enable` hidden in the web UI** | `hide_node_vars: [enable]`, so it is not shown on the device page or in the API. |
+| 📵 **Telegram without secrets** | Sends only a summary; the bot token does not appear in the process list. |
+| 👤 **Unprivileged user** | Oxidized runs as `oxidized`, without a shell and with `NoNewPrivileges`. |
+| 📁 **Tight permissions** | `router.db` 600, `telegram.env` 640, backups and installation log 600. |
 
 > [!WARNING]
-> Las configuraciones guardadas en git **contienen secretos**, porque es una copia completa que sirve para restaurar. Protege el acceso al LXC y, si usas push remoto, a ese repositorio. Si prefieres eliminarlos de las copias, añade `remove_secret: true` en `vars:` (ver la [documentación de Oxidized](https://github.com/ytti/oxidized/blob/master/docs/Configuration.md#removing-secrets)).
+> Configurations stored in git **contain secrets**, because they are full backups you can restore from. Protect access to the LXC and, if you use remote push, to that repository. If you prefer to strip them from the backups, add `remove_secret: true` under `vars:` (see the [Oxidized documentation](https://github.com/ytti/oxidized/blob/master/docs/Configuration.md#removing-secrets)).
 
-## 🧰 Mantenimiento
+## 🧰 Maintenance
 
-Vuelve a ejecutar el script en el mismo LXC y aparecerá este menú:
+Run the script again in the same LXC and this menu appears:
 
-| Opción | Qué hace |
+| Option | What it does |
 |---|---|
-| **Actualizar** | Hace una copia de seguridad y después actualiza el sistema y las gemas de Oxidized, conservando tu configuración. |
-| **Copia de seguridad** | Guarda la configuración, el inventario, el repositorio git, nginx y TLS en `/root/oxidized-backup-FECHA.tar.gz`. |
-| **Desinstalar** | Lo elimina todo, ofreciendo antes una copia de seguridad y la opción de conservar el repositorio git. |
+| **Update** | Makes a backup, then updates the system and the Oxidized gems, keeping your configuration. |
+| **Backup** | Saves the configuration, inventory, git repository, nginx and TLS to `/root/oxidized-backup-DATE.tar.gz`. |
+| **Uninstall** | Removes everything, offering a backup first and the option to keep the git repository. |
 
-## 📂 Dónde está cada cosa
+## 📂 Where everything lives
 
 ```text
 /etc/oxidized/
-├── config               # configuración de Oxidized
-├── router.db            # inventario de equipos (600)
-└── telegram.env         # token y chat de Telegram (640)
+├── config               # Oxidized configuration
+├── router.db            # device inventory (600)
+├── telegram.env         # Telegram token and chat (640)
+└── installer.lang       # language chosen at installation
 /var/lib/oxidized/
-├── configs.git/         # historial de configuraciones
+├── configs.git/         # configuration history
 └── .ssh/
-    ├── known_hosts      # huellas SSH de los equipos (y del remoto git)
-    └── id_rsa(.pub)     # clave para el push remoto
-/etc/nginx/ssl/          # certificado TLS
+    ├── known_hosts      # SSH fingerprints of devices (and of the git remote)
+    └── id_rsa(.pub)     # key for remote push
+/etc/nginx/ssl/          # TLS certificate
 /usr/local/bin/
 ├── oxidized-reload
 └── oxidized-telegram-notify
 /var/log/oxidized-install.log
 ```
 
-## 🩺 Solución de problemas
+## 🩺 Troubleshooting
 
 <details>
-<summary><b>Ver los logs</b></summary>
+<summary><b>Viewing the logs</b></summary>
 
 ```bash
-journalctl -u oxidized -f          # Oxidized en tiempo real
+journalctl -u oxidized -f          # Oxidized in real time
 systemctl status oxidized
-cat /var/log/oxidized-install.log  # instalación
-VERBOSE=yes bash oxidized-install.sh   # instalación mostrando toda la salida
+cat /var/log/oxidized-install.log  # installation
+VERBOSE=yes bash oxidized-install.sh   # installation showing all output
 ```
 
 </details>
 
 <details>
-<summary><b>Un equipo falla por la huella SSH (host key)</b></summary>
+<summary><b>A device fails because of its SSH fingerprint (host key)</b></summary>
 
-Si has sustituido el equipo o regenerado su clave SSH, la huella ya no coincide. Comprueba que el cambio es legítimo y vuelve a registrarla:
+If you replaced the device or regenerated its SSH key, the fingerprint no longer matches. Check that the change is legitimate and record it again:
 
 ```bash
 oxidized-reload --trust 192.0.2.10
 ```
 
-Para equipos con SSH en un puerto distinto del 22, indica el puerto: `oxidized-reload --trust 192.0.2.10 2222`.
+For devices with SSH on a port other than 22, give the port: `oxidized-reload --trust 192.0.2.10 2222`.
 
 </details>
 
 <details>
-<summary><b>Un equipo solo admite Telnet</b></summary>
+<summary><b>A device only supports Telnet</b></summary>
 
-Telnet está desactivado por defecto. Puedes activarlo para un modelo concreto en `/etc/oxidized/config` y reiniciar el servicio:
+Telnet is disabled by default. You can enable it for a specific model in `/etc/oxidized/config` and restart the service:
 
 ```yaml
 models:
@@ -311,30 +316,30 @@ models:
     input: telnet
 ```
 
-Ten en cuenta que las credenciales de ese equipo viajarán en claro.
+Keep in mind that this device's credentials will travel in clear text.
 
 </details>
 
 <details>
-<summary><b>El servicio no arranca</b></summary>
+<summary><b>The service does not start</b></summary>
 
-- **Sin equipos en `router.db`:** es lo esperado. Añade uno y ejecuta `oxidized-reload`.
-- **`invalid byte sequence in US-ASCII`:** falta el locale UTF-8 en el servicio. El script lo configura en el unit de systemd; revisa que no lo hayas sobrescrito.
+- **No devices in `router.db`:** this is expected. Add one and run `oxidized-reload`.
+- **`invalid byte sequence in US-ASCII`:** the service is missing the UTF-8 locale. The script sets it in the systemd unit; check that you have not overwritten it.
 
 </details>
 
 <details>
-<summary><b>Personalizar la configuración de Oxidized</b></summary>
+<summary><b>Customising the Oxidized configuration</b></summary>
 
-Grupos, credenciales por modelo, puertos SSH, bastiones, algoritmos antiguos y otras opciones: consulta la [documentación oficial](https://github.com/ytti/oxidized/blob/master/docs/Configuration.md). Tras editar `/etc/oxidized/config`, ejecuta `systemctl restart oxidized`.
+Groups, per-model credentials, SSH ports, jump hosts, legacy algorithms and other options: see the [official documentation](https://github.com/ytti/oxidized/blob/master/docs/Configuration.md). After editing `/etc/oxidized/config`, run `systemctl restart oxidized`.
 
 </details>
 
-## 🙏 Créditos
+## 🙏 Credits
 
-- [**Oxidized**](https://github.com/ytti/oxidized) y [**oxidized-web**](https://github.com/ytti/oxidized-web), de ytti y su comunidad.
-- Estilo inspirado en [**community-scripts/ProxmoxVE**](https://github.com/community-scripts/ProxmoxVE).
+- [**Oxidized**](https://github.com/ytti/oxidized) and [**oxidized-web**](https://github.com/ytti/oxidized-web), by ytti and the community.
+- Style inspired by [**community-scripts/ProxmoxVE**](https://github.com/community-scripts/ProxmoxVE).
 
-## 📄 Licencia
+## 📄 License
 
 [MIT](LICENSE) © 2026 Psycomy
