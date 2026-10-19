@@ -59,16 +59,16 @@ Un único script, con el estilo de [community-scripts/ProxmoxVE](https://github.
 Dentro del LXC, como `root`:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.0.0/oxidized-install.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.0.1/oxidized-install.sh)"
 ```
 
 > [!TIP]
-> El comando apunta a la etiqueta **`v1.0.0`**, no a `main`. Así sabes exactamente qué código ejecutas como root, aunque el repositorio cambie después.
+> El comando apunta a la etiqueta **`v1.0.1`**, no a `main`. Así sabes exactamente qué código ejecutas como root, aunque el repositorio cambie después.
 
 Si prefieres revisarlo antes de ejecutarlo:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.0.0/oxidized-install.sh
+curl -fsSLO https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.0.1/oxidized-install.sh
 less oxidized-install.sh
 bash oxidized-install.sh
 ```

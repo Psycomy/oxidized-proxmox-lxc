@@ -10,7 +10,7 @@
 #
 # Uso (apunta a una etiqueta o commit concreto de tu repo, no a la rama principal,
 # para que nadie pueda cambiar lo que ejecutas como root sin que lo sepas):
-#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.0.0/oxidized-install.sh)"
+#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/Psycomy/oxidized-proxmox-lxc/v1.0.1/oxidized-install.sh)"
 #
 # Instalación desatendida (cualquier variable definida se salta su pregunta):
 #   OXI_WEB_MODE=none|direct|nginx   OXI_WEB_USER  OXI_WEB_PASS
@@ -166,16 +166,16 @@ ask_input() { # ask_input <var> <título> <texto> [valor por defecto]
   printf -v "${var}" '%s' "${value}"
 }
 
-ask_password() { # ask_password <var> <título> <texto>
-  local var=$1 title=$2 text=$3 p1 p2
+ask_password() { # ask_password <var> <título> <texto> [texto de confirmación]
+  local var=$1 title=$2 text=$3 confirm=${4:-"Repite la contraseña:"} p1 p2
   [[ -n "${!var:-}" ]] && return 0
   while true; do
     p1=$(whiptail --backtitle "${BACKTITLE}" --title "${title}" --passwordbox "${text}" 10 72 3>&1 1>&2 2>&3) || exit_script
-    p2=$(whiptail --backtitle "${BACKTITLE}" --title "${title}" --passwordbox "Repite la contraseña:" 10 72 3>&1 1>&2 2>&3) || exit_script
+    p2=$(whiptail --backtitle "${BACKTITLE}" --title "${title}" --passwordbox "${confirm}" 10 72 3>&1 1>&2 2>&3) || exit_script
     if [[ -z "${p1}" ]]; then
-      whiptail --backtitle "${BACKTITLE}" --title "${title}" --msgbox "La contraseña no puede estar vacía." 8 50
+      whiptail --backtitle "${BACKTITLE}" --title "${title}" --msgbox "El valor no puede estar vacío." 8 50
     elif [[ "${p1}" != "${p2}" ]]; then
-      whiptail --backtitle "${BACKTITLE}" --title "${title}" --msgbox "Las contraseñas no coinciden." 8 50
+      whiptail --backtitle "${BACKTITLE}" --title "${title}" --msgbox "Los dos valores no coinciden; vuelve a introducirlo." 8 60
     else
       break
     fi
@@ -310,7 +310,7 @@ gather_options() {
     fi
   fi
   if [[ "${OXI_TELEGRAM}" == "yes" ]]; then
-    ask_password OXI_TG_TOKEN "Telegram" "Token del bot (de @BotFather):"
+    ask_password OXI_TG_TOKEN "Telegram" "Token del bot (de @BotFather):" "Repite el token del bot:"
     ask_input OXI_TG_CHAT "Telegram" "Chat ID destino (usuario, grupo o canal):" ""
   fi
 
