@@ -46,13 +46,13 @@ Un único script, con el estilo de [community-scripts/ProxmoxVE](https://github.
 ## 📋 Requisitos
 
 - Un **LXC** en Proxmox (privilegiado o no, ambos sirven) con:
-  - 🟥 **Debian 13** · 🟧 **Ubuntu 24.04** · 🟧 **Ubuntu 26.04**
+  - 🟩 **Debian 13** (probado) · 🟨 **Ubuntu 24.04** (pendiente de probar) · 🟨 **Ubuntu 26.04** (pendiente de probar)
   - Acceso a Internet (paquetes y [rubygems.org](https://rubygems.org))
   - Recomendado: **1 vCPU, 1 GB de RAM y 4 GB de disco** (la instalación compila extensiones de Ruby)
 - Que los equipos de red sean accesibles por **SSH** desde el LXC.
 
 > [!NOTE]
-> Probado en Debian 13 con Oxidized 0.37.0 y oxidized-web 0.18.1.
+> Probado en Debian 13 con Oxidized 0.37.0 y oxidized-web 0.18.1. En Ubuntu 24.04 y 26.04 el script está preparado (incluido el repositorio *universe*), pero **todavía no se ha probado**.
 
 ## 🚀 Instalación rápida
 
